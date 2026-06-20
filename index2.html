@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游客系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif;}
+body{background:#f5f7fa;padding:15px;}
+.login-box{max-width:420px;margin:50px auto;background:#fff;padding:30px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+.login-box h2{text-align:center;color:#165DFF;margin-bottom:20px;}
+input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+button{width:100%;padding:12px;background:#165DFF;color:#fff;border:none;border-radius:8px;margin-top:10px;cursor:pointer;}
+.tip{text-align:center;margin-top:10px;font-size:14px;color:red;}
+
+.main{display:none;}
+.header{background:#165DFF;color:#fff;padding:18px 20px;border-radius:10px;margin-bottom:20px;}
+.panel{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;}
+.panel h3{margin-bottom:14px;color:#333;}
+.btn{padding:9px 16px;background:#165DFF;color:#fff;border:none;border-radius:6px;margin-right:8px;margin-top:10px;cursor:pointer;}
+.btn-logout{background:#666;}
+
+.time-green{color:#28a745;font-weight:bold;}
+.time-orange{color:#fd7e14;font-weight:bold;}
+.time-red{color:#dc3454;font-weight:bold;}
+
+.notice-item{
+  background:#fff8e1;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:8px;
+  border-left:4px solid #fd7e14;
+}
+.notice-title{
+  font-weight:bold;
+  font-size:15px;
+}
+.notice-content{
+  margin:4px 0;
+  font-size:14px;
+}
+.notice-time{
+  font-size:12px;
+  color:#666;
+}
+
+.chat-box{
+  height:300px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:10px;background:#fff;margin-bottom:10px;
+}
+.chat-message{
+  margin-bottom:8px;padding:8px 10px;background:#f1f1f1;border-radius:6px;max-width:85%;
+}
+.chat-message .name{font-size:12px;color:#666;}
+.chat-message .time{font-size:11px;color:#999;text-align:right;}
+.chat-input{display:flex;gap:8px;}
+.chat-input input{flex:1;}
+.chat-input button{width:auto;}
+</style>
+</head>
+
+<body>
+
+<div class="login-box" id="loginBox">
+  <h2>游客登录</h2>
+  <input id="user" placeholder="账号">
+  <input id="pwd" type="password" placeholder="密码">
+  <button onclick="login()">登录</button>
+  <div class="tip" id="tip"></div>
+</div>
+
+<div class="main" id="main">
+  <div class="header">
+    <div id="roleText"></div>
+    <div id="timeText" style="margin-top:6px;"></div>
+  </div>
+
+  <div class="panel">
+    <h3>系统公告</h3>
+    <div id="noticeView"></div>
+  </div>
+
+  <div class="panel">
+    <button class="btn btn-logout" onclick="logout()">退出登录</button>
+  </div>
+
+  <div class="panel">
+    <h3>修改账号密码</h3>
+    <input type="password" id="oldPwd" placeholder="原密码">
+    <input type="text" id="newUser" placeholder="新账号">
+    <input type="password" id="newPwd" placeholder="新密码">
+    <button onclick="saveUserEdit()">保存修改</button>
+    <div id="editTip" style="color:red;margin-top:8px;"></div>
+  </div>
+
+  <div class="panel">
+    <h3>聊天室</h3>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="chat-input">
+      <input type="text" id="chatMsg" placeholder="输入消息...">
+      <button onclick="sendChat()">发送</button>
+      <button onclick="document.getElementById('chatImg').click()">图片</button>
+      <input type="file" id="chatImg" accept="image/*" style="display:none;" onchange="sendChatImg()">
+    </div>
+  </div>
+</div>
+
+<script>
+// 安全读写
+function get(key) {
+  try {
+    let v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : [];
+  } catch (e) { return []; }
+}
+
+function initData() {
+  if (!localStorage.getItem("visitor_users")) {
+    localStorage.setItem("visitor_users", JSON.stringify([
+      {user:"test1", pwd:"123456", create_time:Date.now(), expire_ms:3600000, login_ip:"", login_device:"", login_time:""}
+    ]));
+  }
+}
+
+function login() {
+  initData();
+  let username = document.getElementById("user").value.trim();
+  let password = document.getElementById("pwd").value.trim();
+  let tip = document.getElementById("tip");
+  if (!username || !password) { tip.innerText = "请输入账号密码"; return; }
+
+  let list = get("visitor_users");
+  let user = list.find(u => u.user === username && u.pwd === password);
+  if (!user) { tip.innerText = "账号或密码错误"; return; }
+
+  localStorage.setItem("loginUser", username);
+  location.reload();
+}
+
+function logout() {
+  localStorage.removeItem("loginUser");
+  location.reload();
+}
+
+function loadNotice() {
+  let list = get("notice");
+  let dom = document.getElementById("noticeView");
+  let html = "";
+  list.forEach(item => {
+    let title = item.title || "公告";
+    let content = item.content || "";
+    let time = item.time || "";
+    html += `
+    <div class="notice-item">
+      <div class="notice-title">${title}</div>
+      <div class="notice-content">${content}</div>
+      <div class="notice-time">${time}</div>
+    </div>`;
+  });
+  dom.innerHTML = html || "<div>暂无公告</div>";
+}
+
+function loadChat() {
+  let list = get("chat");
+  let box = document.getElementById("chatBox");
+  box.innerHTML = "";
+  list.forEach(item => {
+    let div = document.createElement("div");
+    div.className = "chat-message";
+    div.innerHTML = `
+      <div class="name">${item.user}</div>
+      <div>${item.text || ''}</div>
+      ${item.img ? `<img src="${item.img}" style="max-width:200px">` : ''}
+      <div class="time">${item.time}</div>
+    `;
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function refreshTime() {
+  let username = localStorage.getItem("loginUser");
+  if (!username) return;
+  let list = get("visitor_users");
+  let user = list.find(u => u.user === username);
+  if (!user) { logout(); return; }
+
+  let now = Date.now();
+  let left = user.create_time + user.expire_ms - now;
+  if (left < 0) left = 0;
+
+  let d = Math.floor(left / 86400000);
+  let h = Math.floor((left % 86400000) / 3600000);
+  let m = Math.floor((left % 3600000) / 60000);
+  let s = Math.floor((left % 60000) / 1000);
+  let cls = "time-green";
+  if (left <= 600000) cls = "time-red";
+  else if (left <= 3600000) cls = "time-orange";
+
+  document.getElementById("timeText").innerHTML = `剩余：<span class="${cls}">${d}天 ${h}时 ${m}分 ${s}秒</span>`;
+}
+
+function saveUserEdit() {
+  let oldPwd = document.getElementById("oldPwd").value.trim();
+  let newUser = document.getElementById("newUser").value.trim();
+  let newPwd = document.getElementById("newPwd").value.trim();
+  let tip = document.getElementById("editTip");
+
+  let loginUser = localStorage.getItem("loginUser");
+  let list = get("visitor_users");
+  let idx = list.findIndex(x => x.user === loginUser);
+  if (idx === -1) return;
+  if (list[idx].pwd !== oldPwd) { tip.innerText = "原密码错误"; return; }
+
+  let log = get("user_edit_log");
+  log.push({
+    oldUser: loginUser,
+    newUser,
+    oldPwd: list[idx].pwd,
+    newPwd,
+    time: new Date().toLocaleString()
+  });
+  localStorage.setItem("user_edit_log", JSON.stringify(log));
+
+  list[idx].user = newUser;
+  list[idx].pwd = newPwd;
+  localStorage.setItem("visitor_users", JSON.stringify(list));
+
+  tip.innerText = "修改成功，重新登录中...";
+  setTimeout(() => {
+    localStorage.removeItem("loginUser");
+    location.reload();
+  }, 1500);
+}
+
+function sendChat() {
+  let text = document.getElementById("chatMsg").value.trim();
+  if (!text) return;
+  let chat = get("chat");
+  chat.push({
+    user: localStorage.getItem("loginUser"),
+    text: text,
+    img: "",
+    time: new Date().toLocaleString()
+  });
+  localStorage.setItem("chat", JSON.stringify(chat));
+  document.getElementById("chatMsg").value = "";
+}
+
+function sendChatImg() {
+  let file = document.getElementById("chatImg").files[0];
+  if (!file) return;
+  let reader = new FileReader();
+  reader.onload = e => {
+    let chat = get("chat");
+    chat.push({
+      user: localStorage.getItem("loginUser"),
+      text: "",
+      img: e.target.result,
+      time: new Date().toLocaleString()
+    });
+    localStorage.setItem("chat", JSON.stringify(chat));
+  };
+  reader.readAsDataURL(file);
+}
+
+window.onload = function () {
+  initData();
+  let user = localStorage.getItem("loginUser");
+  if (!user) {
+    document.getElementById("loginBox").style.display = "block";
+    return;
+  }
+
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("main").style.display = "block";
+  document.getElementById("roleText").innerText = "用户：" + user;
+
+  // 实时刷新
+  setInterval(() => {
+    loadNotice();
+    loadChat();
+    refreshTime();
+  }, 1000);
+};
+</script>
+</body>
+</html>
