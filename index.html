@@ -3,285 +3,230 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>游客系统</title>
+<title>超级管理员后台</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,sans-serif;}
 body{background:#f5f7fa;padding:15px;}
-.login-box{max-width:420px;margin:50px auto;background:#fff;padding:30px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
-.login-box h2{text-align:center;color:#165DFF;margin-bottom:20px;}
-input{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
-button{width:100%;padding:12px;background:#165DFF;color:#fff;border:none;border-radius:8px;margin-top:10px;cursor:pointer;}
-.tip{text-align:center;margin-top:10px;font-size:14px;color:red;}
-
-.main{display:none;}
-.header{background:#165DFF;color:#fff;padding:18px 20px;border-radius:10px;margin-bottom:20px;}
+input, select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;}
+button{padding:10px 16px;background:#165DFF;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-right:6px;margin-top:6px;}
+button.del{background:#dc3454;}
+.main{max-width:900px;margin:0 auto;}
 .panel{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;}
-.panel h3{margin-bottom:14px;color:#333;}
-.btn{padding:9px 16px;background:#165DFF;color:#fff;border:none;border-radius:6px;margin-right:8px;margin-top:10px;cursor:pointer;}
-.btn-logout{background:#666;}
+.panel h3{margin-bottom:14px;color:#222;}
+.item{padding:14px;border-bottom:1px solid #eee;}
 
 .time-green{color:#28a745;font-weight:bold;}
 .time-orange{color:#fd7e14;font-weight:bold;}
 .time-red{color:#dc3454;font-weight:bold;}
 
-.notice-item{
-  background:#fff8e1;
-  padding:10px;
-  border-radius:6px;
-  margin-bottom:8px;
-  border-left:4px solid #fd7e14;
-}
-.notice-title{
-  font-weight:bold;
-  font-size:15px;
-}
-.notice-content{
-  margin:4px 0;
-  font-size:14px;
-}
-.notice-time{
-  font-size:12px;
-  color:#666;
-}
+.chat-box{height:300px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:10px;background:#fff;margin-top:10px;}
+.chat-item{padding:8px;background:#f1f1f1;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;}
+.chat-info{font-size:12px;color:#666;}
+.chat-time{font-size:11px;color:#999;}
 
-.chat-box{
-  height:300px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:10px;background:#fff;margin-bottom:10px;
+.notice-item{
+  padding:10px;background:#fff8e1;border-radius:6px;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
 }
-.chat-message{
-  margin-bottom:8px;padding:8px 10px;background:#f1f1f1;border-radius:6px;max-width:85%;
-}
-.chat-message .name{font-size:12px;color:#666;}
-.chat-message .time{font-size:11px;color:#999;text-align:right;}
-.chat-input{display:flex;gap:8px;}
-.chat-input input{flex:1;}
-.chat-input button{width:auto;}
+.notice-title{font-weight:bold;font-size:14px;}
+.notice-content{font-size:13px;}
+.flex{display:flex;gap:8px;align-items:center;}
 </style>
 </head>
 
 <body>
+<div class="main">
+  <div class="panel"><h3>管理中心</h3></div>
 
-<div class="login-box" id="loginBox">
-  <h2>游客登录</h2>
-  <input id="user" placeholder="账号">
-  <input id="pwd" type="password" placeholder="密码">
-  <button onclick="login()">登录</button>
-  <div class="tip" id="tip"></div>
-</div>
-
-<div class="main" id="main">
-  <div class="header">
-    <div id="roleText"></div>
-    <div id="timeText" style="margin-top:6px;"></div>
+  <div class="panel">
+    <h3>公告管理</h3>
+    <input id="noticeTitle" placeholder="公告标题">
+    <input id="noticeContent" placeholder="公告内容">
+    <button onclick="addNotice()">发布公告</button>
+    <div id="noticeList"></div>
   </div>
 
   <div class="panel">
-    <h3>系统公告</h3>
-    <div id="noticeView"></div>
+    <h3>添加游客</h3>
+    <input id="vu" placeholder="账号">
+    <input id="vp" placeholder="密码">
+    <div class="flex">
+      <input id="vt_num" type="number" placeholder="时长" style="flex:1;">
+      <select id="vt_unit">
+        <option value="s">秒</option>
+        <option value="m" selected>分</option>
+        <option value="h">时</option>
+        <option value="d">天</option>
+      </select>
+    </div>
+    <button onclick="addV()">添加游客</button>
   </div>
 
-  <div class="panel">
-    <button class="btn btn-logout" onclick="logout()">退出登录</button>
-  </div>
+  <div class="panel"><h3>游客列表</h3><div id="vlist"></div></div>
 
   <div class="panel">
-    <h3>修改账号密码</h3>
-    <input type="password" id="oldPwd" placeholder="原密码">
-    <input type="text" id="newUser" placeholder="新账号">
-    <input type="password" id="newPwd" placeholder="新密码">
-    <button onclick="saveUserEdit()">保存修改</button>
-    <div id="editTip" style="color:red;margin-top:8px;"></div>
+    <h3>修改游客时间</h3>
+    <input id="edit_target" placeholder="游客账号">
+    <div class="flex">
+      <input id="d" type="number" value="0" placeholder="天" style="flex:1;">
+      <input id="h" type="number" value="0" placeholder="时" style="flex:1;">
+      <input id="m" type="number" value="0" placeholder="分" style="flex:1;">
+      <input id="s" type="number" value="0" placeholder="秒" style="flex:1;">
+    </div>
+    <button onclick="setUserTime()">修改时间</button>
   </div>
 
+  <div class="panel"><h3>修改记录</h3><div id="editLog"></div></div>
+
   <div class="panel">
-    <h3>聊天室</h3>
+    <h3>管理员聊天室</h3>
     <div class="chat-box" id="chatBox"></div>
-    <div class="chat-input">
-      <input type="text" id="chatMsg" placeholder="输入消息...">
-      <button onclick="sendChat()">发送</button>
-      <button onclick="document.getElementById('chatImg').click()">图片</button>
-      <input type="file" id="chatImg" accept="image/*" style="display:none;" onchange="sendChatImg()">
+    <div class="flex" style="margin-top:10px;">
+      <input id="adminMsg" placeholder="消息" style="flex:1;">
+      <button onclick="adminSendMsg()">发送</button>
     </div>
   </div>
 </div>
 
 <script>
-// 安全读写
 function get(key) {
-  try {
-    let v = localStorage.getItem(key);
-    return v ? JSON.parse(v) : [];
-  } catch (e) { return []; }
+  try { let v = localStorage.getItem(key); return v ? JSON.parse(v) : []; } catch(e) { return []; }
+}
+function set(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) { alert("存储失败"); }
 }
 
-function initData() {
-  if (!localStorage.getItem("visitor_users")) {
-    localStorage.setItem("visitor_users", JSON.stringify([
-      {user:"test1", pwd:"123456", create_time:Date.now(), expire_ms:3600000, login_ip:"", login_device:"", login_time:""}
-    ]));
-  }
-}
-
-function login() {
-  initData();
-  let username = document.getElementById("user").value.trim();
-  let password = document.getElementById("pwd").value.trim();
-  let tip = document.getElementById("tip");
-  if (!username || !password) { tip.innerText = "请输入账号密码"; return; }
-
-  let list = get("visitor_users");
-  let user = list.find(u => u.user === username && u.pwd === password);
-  if (!user) { tip.innerText = "账号或密码错误"; return; }
-
-  localStorage.setItem("loginUser", username);
-  location.reload();
-}
-
-function logout() {
-  localStorage.removeItem("loginUser");
-  location.reload();
+function addNotice() {
+  let title = document.getElementById("noticeTitle").value.trim();
+  let content = document.getElementById("noticeContent").value.trim();
+  if (!title || !content) { alert("填标题+内容"); return; }
+  let list = get("notice");
+  list.unshift({ title, content, time: new Date().toLocaleString() });
+  set("notice", list);
+  document.getElementById("noticeTitle").value = "";
+  document.getElementById("noticeContent").value = "";
 }
 
 function loadNotice() {
   let list = get("notice");
-  let dom = document.getElementById("noticeView");
-  let html = "";
-  list.forEach(item => {
-    let title = item.title || "公告";
-    let content = item.content || "";
-    let time = item.time || "";
-    html += `
+  let dom = document.getElementById("noticeList");
+  dom.innerHTML = "";
+  list.forEach((item,i)=>{
+    dom.innerHTML += `
     <div class="notice-item">
-      <div class="notice-title">${title}</div>
-      <div class="notice-content">${content}</div>
-      <div class="notice-time">${time}</div>
+      <div><div class="notice-title">${item.title}</div><div>${item.content}</div></div>
+      <div><small>${item.time}</small><br><button class="del" onclick="delNotice(${i})">删</button></div>
     </div>`;
   });
-  dom.innerHTML = html || "<div>暂无公告</div>";
 }
 
-function loadChat() {
-  let list = get("chat");
-  let box = document.getElementById("chatBox");
-  box.innerHTML = "";
-  list.forEach(item => {
-    let div = document.createElement("div");
-    div.className = "chat-message";
-    div.innerHTML = `
-      <div class="name">${item.user}</div>
-      <div>${item.text || ''}</div>
-      ${item.img ? `<img src="${item.img}" style="max-width:200px">` : ''}
-      <div class="time">${item.time}</div>
-    `;
-    box.appendChild(div);
+function delNotice(i) {
+  let list = get("notice"); list.splice(i,1); set("notice", list);
+}
+
+function addV() {
+  let user = document.getElementById("vu").value.trim();
+  let pwd = document.getElementById("vp").value.trim();
+  let num = Number(document.getElementById("vt_num").value)||0;
+  let unit = document.getElementById("vt_unit").value;
+  if (!user||!pwd||num<=0) { alert("填完整"); return; }
+  let ms=0;
+  if(unit=="s")ms=num*1000;
+  if(unit=="m")ms=num*60000;
+  if(unit=="h")ms=num*3600000;
+  if(unit=="d")ms=num*86400000;
+  let list=get("visitor_users");
+  if(list.some(x=>x.user==user)){alert("已存在");return;}
+  list.push({user,pwd,create_time:Date.now(),expire_ms:ms,login_ip:"",login_device:"",login_time:""});
+  set("visitor_users",list);
+}
+
+function renderV(){
+  let list=get("visitor_users");
+  let now=Date.now();
+  let html="";
+  list.forEach((it,i)=>{
+    let left=it.create_time+it.expire_ms-now;
+    if(left<0)left=0;
+    let d=Math.floor(left/86400000);
+    let h=Math.floor((left%86400000)/3600000);
+    let m=Math.floor((left%3600000)/60000);
+    let s=Math.floor((left%60000)/1000);
+    let cls="time-green";
+    if(left<=600000)cls="time-red";
+    else if(left<=3600000)cls="time-orange";
+    html+=`
+    <div class="item">
+      ${it.user} | 剩余:<span class="${cls}">${d}天${h}时${m}分${s}秒</span><br>
+      登录:${it.login_time||'未'}<br>
+      <button class="del" onclick="delV(${i})">删</button>
+    </div>`;
   });
-  box.scrollTop = box.scrollHeight;
+  document.getElementById("vlist").innerHTML=html;
 }
 
-function refreshTime() {
-  let username = localStorage.getItem("loginUser");
-  if (!username) return;
-  let list = get("visitor_users");
-  let user = list.find(u => u.user === username);
-  if (!user) { logout(); return; }
-
-  let now = Date.now();
-  let left = user.create_time + user.expire_ms - now;
-  if (left < 0) left = 0;
-
-  let d = Math.floor(left / 86400000);
-  let h = Math.floor((left % 86400000) / 3600000);
-  let m = Math.floor((left % 3600000) / 60000);
-  let s = Math.floor((left % 60000) / 1000);
-  let cls = "time-green";
-  if (left <= 600000) cls = "time-red";
-  else if (left <= 3600000) cls = "time-orange";
-
-  document.getElementById("timeText").innerHTML = `剩余：<span class="${cls}">${d}天 ${h}时 ${m}分 ${s}秒</span>`;
+function delV(i){
+  let list=get("visitor_users");list.splice(i,1);set("visitor_users",list);
 }
 
-function saveUserEdit() {
-  let oldPwd = document.getElementById("oldPwd").value.trim();
-  let newUser = document.getElementById("newUser").value.trim();
-  let newPwd = document.getElementById("newPwd").value.trim();
-  let tip = document.getElementById("editTip");
+function setUserTime(){
+  let user=document.getElementById("edit_target").value.trim();
+  let d=Number(document.getElementById("d").value)||0;
+  let h=Number(document.getElementById("h").value)||0;
+  let m=Number(document.getElementById("m").value)||0;
+  let s=Number(document.getElementById("s").value)||0;
+  let total=d*86400000+h*3600000+m*60000+s*1000;
+  let list=get("visitor_users");
+  let idx=list.findIndex(x=>x.user==user);
+  if(idx==-1){alert("不存在");return;}
+  list[idx].create_time=Date.now();
+  list[idx].expire_ms=total;
+  set("visitor_users",list);
+  alert("成功");
+}
 
-  let loginUser = localStorage.getItem("loginUser");
-  let list = get("visitor_users");
-  let idx = list.findIndex(x => x.user === loginUser);
-  if (idx === -1) return;
-  if (list[idx].pwd !== oldPwd) { tip.innerText = "原密码错误"; return; }
-
-  let log = get("user_edit_log");
-  log.push({
-    oldUser: loginUser,
-    newUser,
-    oldPwd: list[idx].pwd,
-    newPwd,
-    time: new Date().toLocaleString()
+function renderLog(){
+  let log=get("user_edit_log");
+  let html="";
+  log.forEach(it=>{
+    html+=`<div class="item">${it.oldUser} → ${it.newUser} | ${it.time}</div>`;
   });
-  localStorage.setItem("user_edit_log", JSON.stringify(log));
-
-  list[idx].user = newUser;
-  list[idx].pwd = newPwd;
-  localStorage.setItem("visitor_users", JSON.stringify(list));
-
-  tip.innerText = "修改成功，重新登录中...";
-  setTimeout(() => {
-    localStorage.removeItem("loginUser");
-    location.reload();
-  }, 1500);
+  document.getElementById("editLog").innerHTML=html;
 }
 
-function sendChat() {
-  let text = document.getElementById("chatMsg").value.trim();
-  if (!text) return;
-  let chat = get("chat");
-  chat.push({
-    user: localStorage.getItem("loginUser"),
-    text: text,
-    img: "",
-    time: new Date().toLocaleString()
+function loadChat(){
+  let chat=get("chat");
+  let box=document.getElementById("chatBox");
+  box.innerHTML="";
+  chat.forEach((it,i)=>{
+    box.innerHTML+=`
+    <div class="chat-item">
+      <div><div class="chat-info">${it.user}</div><div>${it.text||''}</div><div class="chat-time">${it.time}</div></div>
+      <button class="del" onclick="delChat(${i})">删</button>
+    </div>`;
   });
-  localStorage.setItem("chat", JSON.stringify(chat));
-  document.getElementById("chatMsg").value = "";
+  box.scrollTop=box.scrollHeight;
 }
 
-function sendChatImg() {
-  let file = document.getElementById("chatImg").files[0];
-  if (!file) return;
-  let reader = new FileReader();
-  reader.onload = e => {
-    let chat = get("chat");
-    chat.push({
-      user: localStorage.getItem("loginUser"),
-      text: "",
-      img: e.target.result,
-      time: new Date().toLocaleString()
-    });
-    localStorage.setItem("chat", JSON.stringify(chat));
-  };
-  reader.readAsDataURL(file);
+function adminSendMsg(){
+  let t=document.getElementById("adminMsg").value.trim();
+  if(!t)return;
+  let chat=get("chat");
+  chat.push({user:"【管理员】",text:t,time:new Date().toLocaleString()});
+  set("chat",chat);
+  document.getElementById("adminMsg").value="";
 }
 
-window.onload = function () {
-  initData();
-  let user = localStorage.getItem("loginUser");
-  if (!user) {
-    document.getElementById("loginBox").style.display = "block";
-    return;
-  }
+function delChat(i){
+  let chat=get("chat");chat.splice(i,1);set("chat",chat);
+}
 
-  document.getElementById("loginBox").style.display = "none";
-  document.getElementById("main").style.display = "block";
-  document.getElementById("roleText").innerText = "用户：" + user;
-
-  // 实时刷新
-  setInterval(() => {
-    loadNotice();
-    loadChat();
-    refreshTime();
-  }, 1000);
-};
+setInterval(()=>{
+  loadNotice();
+  renderV();
+  renderLog();
+  loadChat();
+},1000);
 </script>
 </body>
 </html>
